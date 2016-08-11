@@ -25,7 +25,7 @@ class Post < Sequel::Model
   def validate
     super
     validates_presence [:headline, :website, :url]
-    validates_unique :url
+    validates_unique [:url, :headline], :message => "combination is not unique"
     validates_format /\Ahttps?:\/\/.*\./, :url, :message=>'is not a valid URL'
   end
 end
@@ -66,29 +66,33 @@ def build_post(page)
 end
 
 def save_to_db(post)
-  #TODO replace with validation error resuce
- urls = Post.all.map {|row| row[:url]}
- if urls.include?(post.url)
-   puts "URL already in DB. Aborting..."
-   return false
- end
-  if post.save
+  if post.valid?
+    post.save
     puts "New post saved to DB"
     return true
   else
-    raise "Unable to save to DB"
+    binding.pry if defined? Pry
+    post.errors.each {|x| puts x.join(" ")}
+    return false
   end
 end
+
+
+
 page = get_page
 post = build_post(page)
-save_to_db(post)
+if save_to_db(post)
+  build_tweet(post)
+end
 
 
+
+def shorten_tweet(post.url)
+end
 
 
 
 def build_tweet(post)
-  #TODO: Add Method
 
 end
 
