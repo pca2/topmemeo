@@ -1,6 +1,7 @@
 #! /usr/bin/env ruby
 require 'mechanize'
 require 'sequel'
+require 'chatterbot/dsl'
 
 DIR = File.expand_path(File.dirname(__FILE__)) #path to containing folder
 DB_PATH ="#{DIR}/memeorandum.db"
@@ -95,17 +96,24 @@ def build_tweet(post)
 end
 
 
-def send_tweet(tweet)
+def send_tweet(tweet_msg)
   #TODO: Add method
+  tweet tweet_msg 
 end
 
-#Runtime TODO: Add method
-page = get_page
-post = build_post(page)
-if save_to_db(post)
- tweet = build_tweet(post)
- puts tweet
- else
-   puts "No new link"
+#run TODO: Add method
+def run
+  page = get_page
+  post = build_post(page)
+  if save_to_db(post)
+    tweet_msg = build_tweet(post)
+    send_tweet(tweet_msg)
+  else
+    puts "No new link"
+  end
+end
+
+if __FILE__ == $0
+  run
 end
 
