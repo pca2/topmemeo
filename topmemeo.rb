@@ -14,7 +14,7 @@ class Log
   def self.log
     unless @logger
       @logger = Logger.new('topmemeo.log', 'monthly')
-      @logger.level = Logger::DEBUG
+      @logger.level = Logger::INFO
       @logger.datetime_format = '%Y-%m-%d %H:%M:%S'
     end
     @logger
@@ -22,6 +22,7 @@ class Log
 end
 
 #Define table if new db 
+#TODO save finished tweet to DB
 unless File.exist?(DB_PATH)
   DB.create_table :posts do 
     primary_key :id
@@ -42,8 +43,8 @@ class Post < Sequel::Model
   def validate
     super
     validates_presence [:headline, :website, :url]
-    validates_unique [:url, :headline], :message => "combination is not unique"
     validates_format /\Ahttps?:\/\/.*\./, :url, :message=>'is not a valid URL'
+    validates_unique [:url, :headline], :message => "combination is not unique"
   end
 end
 
@@ -71,7 +72,6 @@ end
 def build_post(page)
   post = Post.new
   Log.log.info "Building post"
-  binding.pry if defined? Pry
   post.headline = page.search("td.class","a.item")[0].children[3].text
   Log.log.debug "Headline saved"
   author_website = page.search("td.class","a.item")[0].children[1].text.gsub(/\n|:/,"")
@@ -93,14 +93,13 @@ def build_post(page)
 end
 
 def save_to_db(post)
-  #TODO split validation and saving into separate methods
   if post.valid?
     post.save
     Log.log.info "New post saved to DB"
     return true
   else
-    Log.log.info "Post not valid. Not saved to DB"
     post.errors.each {|x| Log.log.info x.join(" ")}
+    Log.log.info "Not saving to DB"
     return false
   end
 end
@@ -134,6 +133,7 @@ end
 def send_tweet(tweet_msg)
   tweet tweet_msg 
   Log.log.info "Tweet sent"
+  Log.log.debug tweet_msg
 end
 
 def runtime
