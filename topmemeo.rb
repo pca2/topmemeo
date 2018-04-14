@@ -13,7 +13,8 @@ MAX_TWEET_BASE_LENGTH = 114
 class Log
   def self.log
     unless @logger
-      @logger = Logger.new('topmemeo.log', 'monthly')
+      #@logger = Logger.new('/var/log/topmemeo.log', 'monthly')
+      @logger = Logger.new(STDOUT)
       @logger.level = Logger::INFO
       @logger.datetime_format = '%Y-%m-%d %H:%M:%S'
     end
