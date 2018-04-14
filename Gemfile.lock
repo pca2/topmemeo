@@ -38,17 +38,15 @@ GEM
     memoizable (0.4.2)
       thread_safe (~> 0.3, >= 0.3.1)
     mime-types (2.99.2)
-    mini_portile2 (2.1.0)
+    mini_portile2 (2.3.0)
     multipart-post (2.0.0)
     naught (1.1.0)
     net-http-digest_auth (1.4)
     net-http-persistent (2.9.4)
-    nokogiri (1.6.8)
-      mini_portile2 (~> 2.1.0)
-      pkg-config (~> 1.1.7)
+    nokogiri (1.8.2)
+      mini_portile2 (~> 2.3.0)
     ntlm-http (0.1.1)
     oauth (0.4.7)
-    pkg-config (1.1.7)
     sequel (4.37.0)
     simple_oauth (0.3.1)
     sqlite3 (1.3.11)
@@ -75,8 +73,9 @@ PLATFORMS
 DEPENDENCIES
   chatterbot (~> 2.0, >= 2.0.3)
   mechanize
+  nokogiri (~> 1.8.2)
   sequel
   sqlite3
 
 BUNDLED WITH
-   1.12.5
+   1.16.1
