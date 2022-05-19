@@ -1,5 +1,5 @@
 source 'https://rubygems.org'
-gem 'nokogiri', '~> 1.13.4'
+gem 'nokogiri', '~> 1.13.5'
 gem 'mechanize'
 gem 'sequel'
 gem 'sqlite3'
