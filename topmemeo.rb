@@ -3,14 +3,33 @@
 
 require 'mechanize'
 require 'sequel'
-require 'chatterbot/dsl'
 require 'logger'
+require 'json'
+require 'httparty'
+
+class String
+  def to_b
+    case downcase.strip
+    when 'true', 'yes', 'on', 't', '1', 'y', '=='
+      true
+    when 'nil', 'null'
+      nil
+    else
+      false
+    end
+  end
+end
+
+# Mastodon
+MASTODON_ENABLED = ENV['MASTODON_ENABLED'].to_b
+MASTODON_BASE_URL = ENV['MASTODON_BASE_URL']
+MASTODON_ACCESS_TOKEN = ENV['MASTODON_ACCESS_TOKEN']
 
 DIR = __dir__ # path to containing folder
 DB_PATH = "#{DIR}/memeorandum.db".freeze
 DB = Sequel.sqlite(DB_PATH)
-# Twitter will shorten URLS to about 25 chars, so our tweet length needs to be slightly shorter than 140
-MAX_TWEET_BASE_LENGTH = 114
+# Twitter will shorten URLS to about 25 chars, so our twoot length needs to be slightly shorter than 140
+MAX_twoot_BASE_LENGTH = 114
 
 class Log
   def self.log
@@ -25,7 +44,7 @@ class Log
 end
 
 # Define table if new db
-# TODO save finished tweet to DB
+# TODO save finished twoot to DB
 if File.exist?(DB_PATH)
   Log.log.debug 'DB file detected'
 else
@@ -106,34 +125,47 @@ def save_to_db(post)
   end
 end
 
-def build_tweet(post)
-  # Build the longest tweet you can below the char limit
+def build_twoot(post)
+  # Build the longest twoot you can below the char limit
   # TODO: Refactor this to be less horrible. Including detection for null author
   haw = "#{post.headline} | #{post.author} #{post.website}"
   hw = "#{post.headline} | #{post.website}"
   h = post.headline.to_s
   u = " #{post.url}"
-  Log.log.info 'Building Tweet'
-  if haw.length < MAX_TWEET_BASE_LENGTH
-    tweet = haw + u
-    Log.log.info 'Headline + author + website tweet built'
-  elsif hw.length < MAX_TWEET_BASE_LENGTH
-    tweet = hw + u
-    Log.log.info 'Headline + website tweet built'
-  elsif h.length < MAX_TWEET_BASE_LENGTH
-    tweet = h + u
-    Log.log.info 'Headline only tweet built'
+  Log.log.info 'Building twoot'
+  if haw.length < MAX_twoot_BASE_LENGTH
+    twoot = haw + u
+    Log.log.info 'Headline + author + website twoot built'
+  elsif hw.length < MAX_twoot_BASE_LENGTH
+    twoot = hw + u
+    Log.log.info 'Headline + website twoot built'
+  elsif h.length < MAX_twoot_BASE_LENGTH
+    twoot = h + u
+    Log.log.info 'Headline only twoot built'
   else
-    tweet = "#{post.headline[0..MAX_TWEET_BASE_LENGTH]} | #{u}"
-    Log.log.info 'Truncated headline tweet built'
+    twoot = "#{post.headline[0..MAX_TWEET_BASE_LENGTH]} | #{u}"
+    Log.log.info 'Truncated headline twoot built'
   end
-  tweet
+  twoot
 end
 
-def send_tweet(tweet_msg)
-  tweet tweet_msg
-  Log.log.info 'Tweet sent'
-  Log.log.debug tweet_msg
+def toot_msg(msg)
+  Log.log.info 'prepairing to toot'
+  Log.log.debug msg
+  url = "#{MASTODON_BASE_URL}/api/v1/statuses"
+  headers = {
+    'Content-Type' => 'application/json',
+    'Authorization' => "Bearer #{MASTODON_ACCESS_TOKEN}"
+  }
+  body = { "status": msg }
+  res = HTTParty.post(url, headers: headers, body: body.to_json)
+  if res.ok?
+    Log.log.info 'Toot successful'
+    Log.log.debug res
+  else
+    Log.log.info "Toot unsuccessful #{res.response}"
+  end
+  res
 end
 
 def runtime
@@ -141,8 +173,8 @@ def runtime
   page = get_page
   post = build_post(page)
   if save_to_db(post)
-    tweet_msg = build_tweet(post)
-    send_tweet(tweet_msg)
+    twoot_msg = build_tweet(post)
+    toot_msg(twoot_msg)
   end
   Log.log.info 'Run Complete'
 end
